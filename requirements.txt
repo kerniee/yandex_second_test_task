@@ -56,3 +56,4 @@ typing-extensions==3.7.4.3
 urllib3==1.26.3
 uvicorn==0.13.4
 zipp==3.4.1
+psycopg2-binary

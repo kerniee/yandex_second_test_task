@@ -3,11 +3,17 @@ services:
   web_api:
     build: .
     ports:
-      - "80:8000"
+      - "8000:80"
     volumes:
       - ./source/app:/app/app
     depends_on:
       - db
+      - db_testing
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_TEST_SERVER=db_testing
+      - LOCAL=False
   db:
     image: postgres:12
     volumes:
@@ -16,5 +22,15 @@ services:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
+  db_testing:
+    image: postgres:12
+    volumes:
+      - app-db-testing-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=db_testing
+      - PGDATA=/var/lib/postgresql/data/pgdata
 volumes:
   app-db-data:
+  app-db-testing-data:

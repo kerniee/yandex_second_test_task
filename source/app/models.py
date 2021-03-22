@@ -31,7 +31,7 @@ class Courier(Base):
     __tablename__ = "couriers"
 
     id = Column(Integer, primary_key=True, index=True)
-    type = Column(Integer)
+    type = Column(String)
     regions = relationship("Region", secondary=courier_region)
     avg_times = relationship("AverageTime", secondary=courier_avrtime)
     intervals: InstrumentedList = relationship("Time", order_by="asc(Time.time_from)", secondary=courier_intervals)
@@ -66,7 +66,7 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     weight = Column(Float)
-    region = Column(Integer, ForeignKey('regions.id'))
+    region = Column(Integer, ForeignKey('regions.id'), nullable=False)
     regions = relationship("Region", foreign_keys=[region])
     intervals: InstrumentedList = relationship("Time", order_by="asc(Time.time_from)", secondary=order_intervals)
 
@@ -113,7 +113,7 @@ class Region(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
     courier_id = Column(Integer, ForeignKey('couriers.id'))
-    order_id = Column(Integer, ForeignKey('orders.id'))
+    order = Column(Integer, ForeignKey('orders.id'))
     avr_time_id = Column(Integer, ForeignKey('average_times.id'))
     avr_time = relationship("AverageTime", back_populates="region_id")
 
