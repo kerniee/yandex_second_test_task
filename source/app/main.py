@@ -159,7 +159,7 @@ def get_couriers_courier_id(
     db_courier = crud.get_courier(db, courier_id)
     if db_courier is None:
         resp.status_code = 400
-        return {"detail": f"No courier with such id: {courier_id}"}
+        return
     if db_courier.last_order_time is None:
         resp = CourierGetResponse(
             courier_id=courier_id,
