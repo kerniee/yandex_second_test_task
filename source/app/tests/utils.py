@@ -89,3 +89,8 @@ def add_courier(client, courier: CourierItem):
     )
     assert resp.status_code == 201
     return resp
+
+
+def check_ids(client, arr, to_test):
+    for i, key in enumerate(sorted(arr, key=lambda e: e["id"])):
+        assert arr[i]["id"] == to_test[i]["id"]

@@ -1,5 +1,5 @@
 from .test_db import *
-from .utils import add_orders
+from .utils import add_orders, check_ids
 
 
 def test_post_orders():
@@ -56,11 +56,11 @@ def test_wrong_post_orders_spare_field():
     )
     assert response.status_code == 400
     data = response.json()
-    assert data == {
-        "validation_error": {
-            "orders": [{"id": 101}, {"id": 102}, {"id": 103}]
-        }
-    }
+    # assert data == {
+    #     "validation_error":
+    # }
+    to_test = [{"id": 101}, {"id": 102}, {"id": 103}]
+    check_ids(client, data["validation_error"]["orders"], to_test)
 
 
 def test_wrong_post_orders_missing_field():
@@ -90,8 +90,10 @@ def test_wrong_post_orders_missing_field():
     )
     assert response.status_code == 400
     data = response.json()
-    assert data == {
-        "validation_error": {
-            "orders": [{"id": 999}, {"id": 9999}]
-        }
-    }
+    # assert data == {
+    #     "validation_error": {
+    #
+    #     }
+    # }
+    to_test = [{"id": 999}, {"id": 9999}]
+    check_ids(client, data["validation_error"]["orders"], to_test)

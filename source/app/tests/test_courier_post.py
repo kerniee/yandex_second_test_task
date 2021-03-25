@@ -1,5 +1,5 @@
 from .test_db import *
-from .utils import add_couriers
+from .utils import add_couriers, check_ids
 
 
 def test_post_couriers():
@@ -56,11 +56,8 @@ def test_wrong_post_couriers_spare_field():
     )
     assert response.status_code == 400
     data = response.json()
-    assert data == {
-        "validation_error": {
-            "couriers": [{"id": 102}, {"id": 104}, {"id": 105}]
-        }
-    }
+    to_test = [{"id": 102}, {"id": 104}, {"id": 105}]
+    check_ids(client, data["validation_error"]["couriers"], to_test)
 
 
 def test_wrong_post_couriers_missing_field():
@@ -85,8 +82,5 @@ def test_wrong_post_couriers_missing_field():
     )
     assert response.status_code == 400
     data = response.json()
-    assert data == {
-        "validation_error": {
-            "couriers": [{"id": 999}]
-        }
-    }
+    to_test = [{"id": 999}]
+    check_ids(client, data["validation_error"]["couriers"], to_test)

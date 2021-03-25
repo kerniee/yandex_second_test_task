@@ -148,5 +148,20 @@ def test_post_orders_assign_empty():
             json=json_data,
         )
         data = resp.json()
+        assert data == {"orders": []}
+        assert resp.status_code == 200
+
+
+def test_post_orders_assign_invalid_courier():
+    json_data = {
+        "courier_id": 1234554321
+    }
+    for i in range(3):
+        # test few times
+        resp = client.post(
+            "/orders/assign",
+            json=json_data,
+        )
+        data = resp.json()
         assert data is None
         assert resp.status_code == 400

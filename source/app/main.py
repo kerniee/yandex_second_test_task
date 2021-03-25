@@ -94,10 +94,10 @@ def post_orders_assign(
         db: Session = Depends(get_db)
 ) -> Any:
     db_courier = crud.get_courier(db, body.courier_id)
-    db_orders = crud.get_appropriate_orders(db, db_courier)
     if db_courier is None:
         resp.status_code = 400
         return
+    db_orders = crud.get_appropriate_orders(db, db_courier)
     assigned_orders = []
     time = datetime.datetime.now()
     time_formatted = time_to_str(time)
@@ -126,8 +126,8 @@ def post_orders_assign(
     # DEBUG: [db.query(models.Order).filter(models.Order.id == s["id"]).first().intervals for s in assigned_orders]
     db.commit()
     if len(assigned_orders) == 0:
-        resp.status_code = 400
-        return
+        resp.status_code = 200
+        return {"orders": []}
     else:
         return {
             "orders": assigned_orders,
@@ -152,10 +152,14 @@ def post_orders_complete(
 
 @app.get('/couriers/{courier_id}', response_model=CourierGetResponse)
 def get_couriers_courier_id(
+        resp: Response,
         courier_id: int,
         db: Session = Depends(get_db),
 ) -> CourierGetResponse:
     db_courier = crud.get_courier(db, courier_id)
+    if db_courier is None:
+        resp.status_code = 400
+        return {"detail": f"No courier with such id: {courier_id}"}
     if db_courier.last_order_time is None:
         resp = CourierGetResponse(
             courier_id=courier_id,
@@ -175,21 +179,25 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     path = request.scope["path"]
     try:
         if path == "/couriers":
-            wrong_ids = []
+            wrong_ids_with_info = []
             for d in content["detail"]:
                 arr_id = d["loc"][2]
                 courier_id = exc.body["data"][arr_id]["courier_id"]
-                wrong_ids.append({"id": courier_id})
-            content = {"validation_error": {"couriers": wrong_ids}}
+                info = {"id": courier_id}
+                info.update(d)
+                wrong_ids_with_info.append(info)
+            content = {"validation_error": {"couriers": wrong_ids_with_info}}
         elif re.match(r"/couriers/[0-9]+$", path):
             content = None
         elif path == "/orders":
-            wrong_ids = []
+            wrong_ids_with_info = []
             for d in content["detail"]:
                 arr_id = d["loc"][2]
                 order_id = exc.body["data"][arr_id]["order_id"]
-                wrong_ids.append({"id": order_id})
-            content = {"validation_error": {"orders": wrong_ids}}
+                info = {"id": order_id}
+                info.update(d)
+                wrong_ids_with_info.append(info)
+            content = {"validation_error": {"orders": wrong_ids_with_info}}
     except Exception as e:
         content = {"detail": jsonable_encoder(exc.errors())}
 

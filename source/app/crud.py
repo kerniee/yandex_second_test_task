@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Union, List
 
 from sqlalchemy.orm import Session
@@ -39,10 +40,17 @@ def create_order(db: Session, order: schemas.OrderItem, commit=True):
     intervals = unpack_time(order.delivery_hours)
     intervals = [create_time(db, t1, t2, commit=commit) for t1, t2 in intervals]
 
-    db_order = models.Order(id=order.order_id,
-                            weight=order.weight,
-                            region=create_region(db, order.region).id,
-                            intervals=intervals)
+    db_order = get_order(db, order.order_id)
+    if db_order is None:
+        db_order = models.Order(id=order.order_id,
+                                weight=order.weight,
+                                region=create_region(db, order.region).id,
+                                intervals=intervals)
+    else:
+        logging.warning(f"Order with ID:{db_order.courier_id} is already created. Updating values")
+        db_order.weight = order.weight
+        db_order.region = create_region(db, order.region).id
+        db_order.intervals = intervals
     db.add(db_order)
     if commit:
         db.commit()
@@ -53,13 +61,23 @@ def create_courier(db: Session, courier: schemas.CourierItem, commit=True):
     intervals = unpack_time(courier.working_hours)
     intervals = [create_time(db, t1, t2) for t1, t2 in intervals]
 
-    db_courier = models.Courier(id=courier.courier_id,
-                                type=courier.courier_type.value,
-                                regions=[create_region(db, r) for r in courier.regions],
-                                intervals=intervals)
-    db.add(db_courier)
-    if commit:
-        db.commit()
+    db_courier = get_courier(db, courier.courier_id)
+    if db_courier is None:
+        db_courier = models.Courier(id=courier.courier_id,
+                                    type=courier.courier_type.value,
+                                    regions=[create_region(db, r) for r in courier.regions],
+                                    intervals=intervals)
+        db.add(db_courier)
+        if commit:
+            db.commit()
+    else:
+        logging.warning(f"Courier with ID:{db_courier.courier_id} is already created. Updating values")
+        d = {
+            "courier_type": courier.courier_type.value,
+            "regions": courier.courier_id,
+            "working_hours": courier.working_hours,
+        }
+        update_courier(db, db_courier, d)
     return db_courier
 
 
@@ -110,8 +128,15 @@ def update_and_create_average_time(db: Session,
         db.commit()
 
 
-def update_courier(db: Session, courier_id: int, d: dict, commit=True):
-    db_courier = get_courier(db, courier_id)
+def update_courier(db: Session, courier: Union[int, models.Courier], d: dict, commit=True):
+    if isinstance(courier, int):
+        # It is ID
+        db_courier = get_courier(db, courier)
+    elif isinstance(courier, models.Courier):
+        # It is model
+        db_courier = courier
+    else:
+        raise ValueError("Unexpected type of 'courier' param")
     if db_courier is None:
         return
     for key, value in d.items():
