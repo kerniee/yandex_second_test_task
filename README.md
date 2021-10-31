@@ -1,3 +1,6 @@
+# Тестовое задание для [Яндекс школы бекэнд разработки](https://academy.yandex.ru/schools/backend)
+- Telegram: **@BackendSchoolBot**
+
 # Зависимости
 - Docker
 - Docker Compose  
